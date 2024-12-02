@@ -23,7 +23,7 @@ const { forwardError } = require('./utils');
 const MONGO_USER = process.env.MONGO_USER || 'adnan';
 const MONGO_PWD = process.env.MONGO_PWD || 'admin@123';
 const MONGO_DB = process.env.MONGO_DB || 'jenkins';
-const MONGO_HOST = process.env.MONGO_HOST || '127.0.0.1'; // Change if using Atlas
+const MONGO_HOST = process.env.MONGO_HOST || '34.239.45.189'; // Change if using Atlas
 
 const MONGODB_URI = `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PWD)}@${MONGO_HOST}:27017/${MONGO_DB}`;
 
