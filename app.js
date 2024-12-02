@@ -15,17 +15,22 @@ const morgan = require('morgan');
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
-
 const errorController = require('./controllers/error');
 const User = require('./models/user');
 const { forwardError } = require('./utils');
 
-const MONGODB_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PWD}@127.0.0.1/${process.env.MONGO_DB}?retryWrites=true&w=majority`;
+// Use a fallback if environment variables are not set
+const MONGO_USER = process.env.MONGO_USER || 'adnan';
+const MONGO_PWD = process.env.MONGO_PWD || 'admin@123';
+const MONGO_DB = process.env.MONGO_DB || 'jenkins';
+const MONGO_HOST = process.env.MONGO_HOST || '127.0.0.1'; // Change if using Atlas
+
+const MONGODB_URI = `mongodb://${MONGO_USER}:${encodeURIComponent(MONGO_PWD)}@${MONGO_HOST}:27017/${MONGO_DB}`;
 
 const app = express();
 const store = new MongoDbSessionStore({
   uri: MONGODB_URI,
-  collection: 'sessions'
+  collection: 'sessions',
 });
 
 // Multer configs
@@ -35,12 +40,10 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
-  }
+  },
 });
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/png' ||
-    file.mimetype === 'image/jpg' ||
-    file.mimetype === 'image.jpeg') {
+  if (['image/png', 'image/jpg', 'image/jpeg'].includes(file.mimetype)) {
     cb(null, true);
   } else {
     cb(null, false);
@@ -67,7 +70,7 @@ app.use(session({
   secret: 'my secret',
   resave: false,
   saveUninitialized: false,
-  store
+  store,
 }));
 app.use(csrf());
 app.use(flash());
@@ -83,14 +86,14 @@ app.use((req, res, next) => {
     return next();
   }
   User.findById(req.session.user._id)
-    .then(user => {
+    .then((user) => {
       if (!user) {
-        next();
+        return next();
       }
       req.user = user;
       next();
     })
-    .catch(err => forwardError(err, next));
+    .catch((err) => forwardError(err, next));
 });
 
 app.use('/admin', adminRoutes);
@@ -106,10 +109,11 @@ app.use(errorController.get500);
 mongoose
   .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
-    console.log('Successfully connected to MongoDb...');
+    console.log('Successfully connected to MongoDB...');
     const port = process.env.PORT || 3000;
     app.listen(port, () => {
-      console.log(`Listening to port ${port}...`);
+      console.log(`Listening on port ${port}...`);
     });
   })
-  .catch((err) => console.log(err));
+  .catch((err) => console.error('MongoDB connection error:', err));
+
