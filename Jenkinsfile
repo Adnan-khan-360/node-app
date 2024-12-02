@@ -10,6 +10,13 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                echo 'Cleaning old workspace...'
+                deleteDir()
+            }
+        }
+
         stage('Checkout Code') {
             steps {
                 echo 'Fetching code from GitHub...'
@@ -24,20 +31,26 @@ pipeline {
             }
         }
 
-        stage('Start Application') {
+        stage('Deploy Application') {
             steps {
-                echo 'Starting the application...'
-                sh 'node app.js'
+                echo 'Stopping the Node.js service...'
+                sh 'sudo systemctl stop node-data.service || true'
+
+                echo 'Starting the Node.js service...'
+                sh 'sudo systemctl daemon-reload'
+                sh 'sudo systemctl start node-data.service'
             }
         }
     }
 
     post {
         success {
-            echo 'Application built and started successfully!'
+            echo 'Application deployed successfully!'
+            sh 'sudo systemctl status node-data.service'
         }
         failure {
             echo 'Build failed. Check the logs for details.'
+            sh 'sudo systemctl status node-data.service'
         }
     }
 }
