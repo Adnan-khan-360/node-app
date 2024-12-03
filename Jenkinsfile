@@ -41,21 +41,11 @@ pipeline {
                     echo 'Transferring code to EC2...'
                     rsync -avz --exclude 'node_modules' ./ ${EC2_USER}@${EC2_HOST}:${APP_DIR}/
 
-                    echo 'Installing dependencies on EC2...'
-                    ssh ${EC2_USER}@${EC2_HOST} "cd ${APP_DIR} && npm install"
+                    echo 'Running npm install on EC2...'
+                    ssh ${EC2_USER}@${EC2_HOST} "cd ${APP_DIR} && pwd && ls -la && npm install || { echo 'npm install failed'; exit 1; }"
                     """
                 }
             }
         }
     }
-
-    post {
-        success {
-            echo 'Code deployed successfully!'
-        }
-        failure {
-            echo 'Deployment failed. Check the logs for details.'
-        }
-    }
-}
 
