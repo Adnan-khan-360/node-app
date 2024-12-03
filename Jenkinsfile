@@ -23,15 +23,14 @@ pipeline {
             }
         }
 
-
-         stage('Install Dependencies') {
+        stage('Install Dependencies Locally') {
             steps {
-                echo 'Installing dependencies...'
+                echo 'Installing dependencies locally...'
                 sh 'npm install'
             }
         }
 
-        stage('Deploy to EC2') {
+        stage('Deploy to EC2 and Install Dependencies') {
             steps {
                 echo 'Deploying code to EC2...'
                 sshagent(credentials: ["${SSH_CREDENTIALS}"]) {
@@ -42,7 +41,8 @@ pipeline {
                     echo 'Transferring code to EC2...'
                     rsync -avz --exclude 'node_modules' ./ ${EC2_USER}@${EC2_HOST}:${APP_DIR}/
 
-                    echo 'Code deployment to EC2 completed.'
+                    echo 'Installing dependencies on EC2...'
+                    ssh ${EC2_USER}@${EC2_HOST} "cd ${APP_DIR} && npm install"
                     """
                 }
             }
@@ -55,10 +55,6 @@ pipeline {
         }
         failure {
             echo 'Deployment failed. Check the logs for details.'
-        }
-        always {
-            echo 'Cleaning up old workspace...'
-            cleanWs()
         }
     }
 }
