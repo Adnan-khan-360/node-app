@@ -23,6 +23,14 @@ pipeline {
             }
         }
 
+
+         stage('Install Dependencies') {
+            steps {
+                echo 'Installing dependencies...'
+                sh 'npm install'
+            }
+        }
+
         stage('Deploy to EC2') {
             steps {
                 echo 'Deploying code to EC2...'
